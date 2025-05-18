@@ -2,9 +2,15 @@ import telebot
 import os
 import subprocess
 import signal
+import psutil
+import platform
+import time
 import json
 import re
 from datetime import datetime, timedelta
+
+START_TIME = time.time()
+
 
 API_TOKEN = '7574721300:AAGURzPCChSO0I4vmvjQCrw7R_4zLni8LLk'  # Replace with your bot token
 bot = telebot.TeleBot(API_TOKEN)
@@ -99,6 +105,43 @@ def handle_file_upload(message):
     deps = scan_dependencies(code)
 
     bot.reply_to(message, f"✅ Bot uploaded!\n📦 Detected packages:\n" + "\n".join(f"• `{d}`" for d in deps), parse_mode='Markdown')
+
+@bot.message_handler(commands=['ping'])
+def ping(message):
+    # Calculate uptime
+    uptime_seconds = int(time.time() - START_TIME)
+    uptime_str = time.strftime("%H:%M:%S", time.gmtime(uptime_seconds))
+    
+    # Ping in ms (simulate response time)
+    start = time.time()
+    bot.send_chat_action(message.chat.id, 'typing')
+    end = time.time()
+    ping_ms = int((end - start) * 1000)
+    
+    # CPU and RAM usage
+    cpu = psutil.cpu_percent(interval=1)
+    ram = psutil.virtual_memory().percent
+    
+    # System info
+    system = platform.system()
+    arch = platform.machine()
+    
+    # Total users = authorized users count (admins + active users)
+    auth = load_auth_data()
+    total_users = len(auth.get('admins', [])) + len(auth.get('users', {}))
+    
+    response = (
+        "✦ Isagi bot host service ✦ is running...\n\n"
+        f"✧ Ping: {ping_ms} ms\n"
+        f"✧ Up Time:  {uptime_str}\n"
+        f"✧ CPU Usage: {cpu}%\n"
+        f"✧ RAM Usage: {ram}%\n"
+        f"✧ System: {system} ({arch})\n"
+        f"✧ Total Users: {total_users}\n\n"
+        "✧ Bot By: @SLAYER_OP7 (https://t.me/SLAYER_OP7)"
+    )
+    
+    bot.reply_to(message, response)
 
 
 @bot.message_handler(commands=['startbot'])
